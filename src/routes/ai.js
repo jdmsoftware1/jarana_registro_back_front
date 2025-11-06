@@ -3,6 +3,7 @@ import multer from 'multer';
 import AIService from '../services/aiService.js';
 import enhancedAIService from '../services/enhancedAIService.js';
 import embeddingService from '../services/embeddingService.js';
+import { checkAIUtils, checkAIChat } from '../middleware/featureFlags.js';
 
 const router = express.Router();
 
@@ -28,7 +29,7 @@ const upload = multer({
 });
 
 // Analyze work patterns and detect anomalies
-router.get('/analyze-patterns', async (req, res) => {
+router.get('/analyze-patterns', checkAIUtils, async (req, res) => {
   try {
     const { employeeId, days = 30 } = req.query;
     
@@ -48,7 +49,7 @@ router.get('/analyze-patterns', async (req, res) => {
 });
 
 // Get anomalies summary for dashboard
-router.get('/anomalies-summary', async (req, res) => {
+router.get('/anomalies-summary', checkAIUtils, async (req, res) => {
   try {
     const { days = 7 } = req.query;
     
@@ -86,7 +87,7 @@ router.get('/anomalies-summary', async (req, res) => {
 });
 
 // Enhanced chat endpoint with embeddings and database access
-router.post('/chat', async (req, res) => {
+router.post('/chat', checkAIChat, async (req, res) => {
   try {
     const { message, userId } = req.body;
     
@@ -121,7 +122,7 @@ router.post('/chat', async (req, res) => {
 });
 
 // Reload knowledge base
-router.post('/reload-knowledge', async (req, res) => {
+router.post('/reload-knowledge', checkAIUtils, async (req, res) => {
   try {
     await embeddingService.reloadDocuments();
     const stats = embeddingService.getStats();
@@ -140,7 +141,7 @@ router.post('/reload-knowledge', async (req, res) => {
 });
 
 // Get knowledge base stats
-router.get('/knowledge-stats', async (req, res) => {
+router.get('/knowledge-stats', checkAIUtils, async (req, res) => {
   try {
     const stats = embeddingService.getStats();
     res.json(stats);
@@ -154,7 +155,7 @@ router.get('/knowledge-stats', async (req, res) => {
 });
 
 // Upload document
-router.post('/upload-document', upload.single('document'), async (req, res) => {
+router.post('/upload-document', checkAIUtils, upload.single('document'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'No se proporcionó ningún archivo' });
@@ -174,7 +175,7 @@ router.post('/upload-document', upload.single('document'), async (req, res) => {
 });
 
 // View document
-router.get('/view-document/:filename', async (req, res) => {
+router.get('/view-document/:filename', checkAIUtils, async (req, res) => {
   try {
     const fs = await import('fs/promises');
     const path = await import('path');
@@ -194,7 +195,7 @@ router.get('/view-document/:filename', async (req, res) => {
 });
 
 // Delete document
-router.delete('/delete-document/:filename', async (req, res) => {
+router.delete('/delete-document/:filename', checkAIUtils, async (req, res) => {
   try {
     const fs = await import('fs/promises');
     const path = await import('path');
@@ -224,7 +225,7 @@ router.delete('/delete-document/:filename', async (req, res) => {
 });
 
 // Get custom instructions
-router.get('/custom-instructions', async (req, res) => {
+router.get('/custom-instructions', checkAIUtils, async (req, res) => {
   try {
     const fs = await import('fs/promises');
     const path = await import('path');
@@ -248,7 +249,7 @@ router.get('/custom-instructions', async (req, res) => {
 });
 
 // Save custom instructions
-router.post('/custom-instructions', async (req, res) => {
+router.post('/custom-instructions', checkAIUtils, async (req, res) => {
   try {
     const fs = await import('fs/promises');
     const path = await import('path');
@@ -268,7 +269,7 @@ router.post('/custom-instructions', async (req, res) => {
 });
 
 // Get AI insights for specific employee
-router.get('/employee-insights/:employeeId', async (req, res) => {
+router.get('/employee-insights/:employeeId', checkAIUtils, async (req, res) => {
   try {
     const { employeeId } = req.params;
     const { days = 30 } = req.query;
@@ -296,7 +297,7 @@ router.get('/employee-insights/:employeeId', async (req, res) => {
 });
 
 // Predict workload (simplified prediction)
-router.get('/predict-workload', async (req, res) => {
+router.get('/predict-workload', checkAIUtils, async (req, res) => {
   try {
     const { weeks = 4 } = req.query;
     
@@ -336,7 +337,7 @@ router.get('/predict-workload', async (req, res) => {
 });
 
 // Generate smart alerts
-router.get('/smart-alerts', async (req, res) => {
+router.get('/smart-alerts', checkAIUtils, async (req, res) => {
   try {
     const analysis = await AIService.analyzeWorkPatterns(null, 7); // Last week
     
@@ -417,7 +418,7 @@ router.get('/smart-alerts', async (req, res) => {
 });
 
 // Specific employee data queries
-router.post('/employee-query/:employeeId', async (req, res) => {
+router.post('/employee-query/:employeeId', checkAIChat, async (req, res) => {
   try {
     const { employeeId } = req.params;
     const { query } = req.body;
