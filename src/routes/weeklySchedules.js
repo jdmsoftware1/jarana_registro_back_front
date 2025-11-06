@@ -1,6 +1,6 @@
 import express from 'express';
 import { Op } from 'sequelize';
-import { Employee, WeeklySchedule, ScheduleTemplate, ScheduleTemplateDay, DailyScheduleException } from '../models/index.js';
+import { Employee, WeeklySchedule, ScheduleTemplate, ScheduleTemplateDay, DailyScheduleException, ScheduleBreak } from '../models/index.js';
 
 const router = express.Router();
 
@@ -24,6 +24,13 @@ router.get('/employee/:employeeId', async (req, res) => {
           include: [{
             model: ScheduleTemplateDay,
             as: 'templateDays',
+            include: [{
+              model: ScheduleBreak,
+              as: 'breaks',
+              where: { parentType: 'template_day' },
+              required: false,
+              order: [['sortOrder', 'ASC']]
+            }],
             order: [['dayOfWeek', 'ASC']]
           }]
         },
@@ -66,6 +73,13 @@ router.get('/employee/:employeeId/year/:year', async (req, res) => {
           include: [{
             model: ScheduleTemplateDay,
             as: 'templateDays',
+            include: [{
+              model: ScheduleBreak,
+              as: 'breaks',
+              where: { parentType: 'template_day' },
+              required: false,
+              order: [['sortOrder', 'ASC']]
+            }],
             order: [['day_of_week', 'ASC']]
           }]
         },

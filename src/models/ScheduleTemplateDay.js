@@ -27,12 +27,12 @@ export const ScheduleTemplateDay = sequelize.define('ScheduleTemplateDay', {
   },
   startTime: {
     type: DataTypes.TIME,
-    allowNull: false,
+    allowNull: true,
     field: 'start_time'
   },
   endTime: {
     type: DataTypes.TIME,
-    allowNull: false,
+    allowNull: true,
     field: 'end_time'
   },
   breakStartTime: {
@@ -49,6 +49,31 @@ export const ScheduleTemplateDay = sequelize.define('ScheduleTemplateDay', {
     type: DataTypes.BOOLEAN,
     defaultValue: true,
     field: 'is_working_day'
+  },
+  isSplitSchedule: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+    field: 'is_split_schedule'
+  },
+  morningStart: {
+    type: DataTypes.TIME,
+    allowNull: true,
+    field: 'morning_start'
+  },
+  morningEnd: {
+    type: DataTypes.TIME,
+    allowNull: true,
+    field: 'morning_end'
+  },
+  afternoonStart: {
+    type: DataTypes.TIME,
+    allowNull: true,
+    field: 'afternoon_start'
+  },
+  afternoonEnd: {
+    type: DataTypes.TIME,
+    allowNull: true,
+    field: 'afternoon_end'
   },
   notes: {
     type: DataTypes.TEXT,

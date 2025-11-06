@@ -1,6 +1,6 @@
 import express from 'express';
 import { Op } from 'sequelize';
-import { Employee, ScheduleTemplate, ScheduleTemplateDay } from '../models/index.js';
+import { Employee, ScheduleTemplate, ScheduleTemplateDay, ScheduleBreak } from '../models/index.js';
 
 const router = express.Router();
 
@@ -122,19 +122,41 @@ router.post('/', async (req, res) => {
     // Create template days
     const createdDays = [];
     for (const day of templateDays) {
-      if (day.isWorkingDay) {
-        const templateDay = await ScheduleTemplateDay.create({
-          templateId: template.id,
-          dayOfWeek: day.dayOfWeek,
-          startTime: day.startTime,
-          endTime: day.endTime,
-          breakStartTime: day.breakStartTime || null,
-          breakEndTime: day.breakEndTime || null,
-          isWorkingDay: day.isWorkingDay,
-          notes: day.notes || null
-        });
-        createdDays.push(templateDay);
+      const templateDay = await ScheduleTemplateDay.create({
+        templateId: template.id,
+        dayOfWeek: day.dayOfWeek,
+        startTime: day.startTime || null,
+        endTime: day.endTime || null,
+        breakStartTime: day.breakStartTime || null,
+        breakEndTime: day.breakEndTime || null,
+        isWorkingDay: day.isWorkingDay,
+        isSplitSchedule: day.isSplitSchedule || false,
+        morningStart: day.morningStart || null,
+        morningEnd: day.morningEnd || null,
+        afternoonStart: day.afternoonStart || null,
+        afternoonEnd: day.afternoonEnd || null,
+        notes: day.notes || null
+      });
+      
+      // Create breaks for this day if any
+      if (day.breaks && Array.isArray(day.breaks) && day.breaks.length > 0) {
+        for (const breakItem of day.breaks) {
+          await ScheduleBreak.create({
+            parentType: 'template_day',
+            parentId: templateDay.id,
+            name: breakItem.name,
+            startTime: breakItem.startTime,
+            endTime: breakItem.endTime,
+            breakType: breakItem.breakType || 'rest',
+            isPaid: breakItem.isPaid !== undefined ? breakItem.isPaid : true,
+            isRequired: breakItem.isRequired || false,
+            sortOrder: breakItem.sortOrder || 0,
+            createdBy: createdBy
+          });
+        }
       }
+      
+      createdDays.push(templateDay);
     }
     
     // Fetch complete template with relations
@@ -196,22 +218,56 @@ router.put('/:id', async (req, res) => {
     
     // Update template days if provided
     if (templateDays && Array.isArray(templateDays)) {
+      // Get existing template days to delete their breaks
+      const existingDays = await ScheduleTemplateDay.findAll({ where: { templateId: id } });
+      
+      // Delete breaks for existing template days
+      for (const existingDay of existingDays) {
+        await ScheduleBreak.destroy({ 
+          where: { 
+            parentType: 'template_day',
+            parentId: existingDay.id 
+          } 
+        });
+      }
+      
       // Delete existing template days
       await ScheduleTemplateDay.destroy({ where: { templateId: id } });
       
       // Create new template days
       for (const day of templateDays) {
-        if (day.isWorkingDay) {
-          await ScheduleTemplateDay.create({
-            templateId: id,
-            dayOfWeek: day.dayOfWeek,
-            startTime: day.startTime,
-            endTime: day.endTime,
-            breakStartTime: day.breakStartTime || null,
-            breakEndTime: day.breakEndTime || null,
-            isWorkingDay: day.isWorkingDay,
-            notes: day.notes || null
-          });
+        const templateDay = await ScheduleTemplateDay.create({
+          templateId: id,
+          dayOfWeek: day.dayOfWeek,
+          startTime: day.startTime || null,
+          endTime: day.endTime || null,
+          breakStartTime: day.breakStartTime || null,
+          breakEndTime: day.breakEndTime || null,
+          isWorkingDay: day.isWorkingDay,
+          isSplitSchedule: day.isSplitSchedule || false,
+          morningStart: day.morningStart || null,
+          morningEnd: day.morningEnd || null,
+          afternoonStart: day.afternoonStart || null,
+          afternoonEnd: day.afternoonEnd || null,
+          notes: day.notes || null
+        });
+        
+        // Create breaks for this day if any
+        if (day.breaks && Array.isArray(day.breaks) && day.breaks.length > 0) {
+          for (const breakItem of day.breaks) {
+            await ScheduleBreak.create({
+              parentType: 'template_day',
+              parentId: templateDay.id,
+              name: breakItem.name,
+              startTime: breakItem.startTime,
+              endTime: breakItem.endTime,
+              breakType: breakItem.breakType || 'rest',
+              isPaid: breakItem.isPaid !== undefined ? breakItem.isPaid : true,
+              isRequired: breakItem.isRequired || false,
+              sortOrder: breakItem.sortOrder || 0,
+              createdBy: template.createdBy
+            });
+          }
         }
       }
     }

@@ -153,6 +153,22 @@ ScheduleBreak.belongsTo(Employee, {
 // Note: ScheduleBreak uses polymorphic associations via parentType/parentId
 // The actual relationships are handled in the service layer
 
+// Polymorphic association for ScheduleTemplateDay breaks
+ScheduleTemplateDay.hasMany(ScheduleBreak, {
+  foreignKey: 'parentId',
+  constraints: false,
+  scope: {
+    parentType: 'template_day'
+  },
+  as: 'breaks'
+});
+
+ScheduleBreak.belongsTo(ScheduleTemplateDay, {
+  foreignKey: 'parentId',
+  constraints: false,
+  as: 'templateDay'
+});
+
 // AccessLog associations
 Employee.hasMany(AccessLog, {
   foreignKey: 'employeeId',
