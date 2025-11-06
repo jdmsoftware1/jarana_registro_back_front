@@ -13,7 +13,8 @@
     "db:sync": "node src/database/sync.js",
     "check-env": "node scripts/check-env.js",
     "test-db": "node scripts/test-db-connection.js",
-    "postinstall": "cd client && npm install"
+    "postinstall": "cd client && npm install",
+    "render:build": "npm install && cd client && npm install && npm run build"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
